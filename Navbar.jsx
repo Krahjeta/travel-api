@@ -14,7 +14,7 @@ function Navbar() {
         Travel Agency
       </div>
       <div style={{ display: 'flex', gap: '20px' }}>
-        <Link style={{ color: 'white', textDecoration: 'none' }} to="/">Home</Link>
+        <Link style={{ color: 'white', textDecoration: 'none' }} to="home.jsx">Home</Link>
         <Link style={{ color: 'white', textDecoration: 'none' }} to="/destinations">Destinations</Link>
         <Link style={{ color: 'white', textDecoration: 'none' }} to="/about">About Us</Link>
         <Link style={{ color: 'white', textDecoration: 'none' }} to="/contact">Contact</Link>
