@@ -1,25 +1,31 @@
-import logo from './logo.svg';
-import './App.css';
+
+
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import React from 'react';
+import Home from './home.jsx';
+import Navbar from './Navbar.jsx'; // nëse ke bërë Navbar më parë
+import BookTicket from "./bookTicket.jsx";
+import MyTicket from "./myTicket.jsx";
+import Offers from "./offers.jsx";
+import SignIn from "./Login.jsx";
+import SignUp from "./signup.jsx";
+
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <BrowserRouter>
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/book" element={<BookTicket />} />
+        <Route path="/myTicket" element={<MyTicket />} />
+        <Route path="/offers" element={<Offers />} />
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
 export default App;
+
