@@ -3,38 +3,46 @@ import backgroundVideo from './photos/background.mp4'; // Import video from src/
 
 function Home() {
   return (
-    <div style={{ position: 'relative', height: '100vh' }}>
+    <div style={{ position: 'relative', height: '100vh', overflow: 'hidden' }}>
       {/* Background Video */}
-      <video
-        src={backgroundVideo} // Use the imported video
-        type="video/mp4"
-        autoPlay
-        muted
-        loop
+      <div
         style={{
           position: 'absolute',
-          top: '0',
-          left: '0',
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          zIndex: -1,
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '80%', // Make the video smaller (80% of the screen width)
+          height: '80%', // Adjust height proportionally
+          overflow: 'hidden',
+          borderRadius: '20px', // Optional: rounded corners
+          boxShadow: '0 0 20px rgba(0,0,0,0.5)', // Optional: shadow effect
+          zIndex: '-1'
         }}
-      />
+      >
+        <video
+          src={backgroundVideo}
+          type="video/mp4"
+          autoPlay
+          muted
+          loop
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+          }}
+        />
+      </div>
 
       {/* Content Overlay */}
       <div
         style={{
-          position: 'absolute',
-          top: '0',
-          left: '0',
+          position: 'relative',
           width: '100%',
           height: '100%',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          backgroundColor: 'black',
-          opacity: '0.3', // Slight dark overlay to make text readable
+          backgroundColor: 'rgba(0, 0, 0, 0.3)', // Dark overlay with transparency
         }}
       >
         <h1
@@ -46,29 +54,16 @@ function Home() {
             flexDirection: 'column',
             alignItems: 'center',
             gap: '16px',
-            marginBottom: '24px',
-            paddingBottom: '24px',
-            '@media (min-width: 768px)': {
-              flexDirection: 'row',
-            },
-            '@media (min-width: 992px)': {
-              gap: '8px',
-            },
-            '@media (min-width: 1200px)': {
-              gap: '20px',
-            },
           }}
         >
           Travel
           <img
-            className="g-col-6 width-30"
             src="https://dv4xo43u9eo19.cloudfront.net/assets/scalable/asw_logo_star_white-35480c3b7d4b8eb6083950cde8f6c0e5ed1c49f8d6198992bc42458d3ef0f70a.svg"
             alt="Star Logo"
             style={{ width: '30%' }}
           />
           With
           <img
-            className="g-col-6 width-30"
             src="https://dv4xo43u9eo19.cloudfront.net/assets/scalable/asw_logo_star_white-35480c3b7d4b8eb6083950cde8f6c0e5ed1c49f8d6198992bc42458d3ef0f70a.svg"
             alt="Star Logo"
             style={{ width: '30%' }}
@@ -76,7 +71,12 @@ function Home() {
           Joy
         </h1>
       </div>
+      
     </div>
+
+    
+
+    
   );
 }
 
