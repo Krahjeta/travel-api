@@ -1,36 +1,42 @@
 const express = require('express');
+const cors = require('cors');
 const mysql = require('mysql');
+const destinacioneRouter = require('./destinacione'); // import routerin
+
 const app = express();
-const port = 3006;
+const port = 5000;
 
-// Krijo lidhje me databazën
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Krijo lidhje me databazen
 const db = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'destinacioni'
+    host: 'localhost',
+    user: 'root', // ose ndonjë tjetër nëse ke vendosur username tjetër
+    password: '', // ose vendos password nëse ke
+    database: 'agjension_turistik'
 });
 
+// Lidhu me databazen
 db.connect(err => {
-  if (err) throw err;
-  console.log('U lidhëm me databazën!');
+    if (err) {
+        console.error('Gabim në lidhje:', err);
+        return;
+    }
+    console.log('✅ U lidh me databazën!');
 });
 
-// Ruta bazë
-app.get('/', (req, res) => {
-  res.send('Serveri po punon!');
+// Bëje `db` të përdorshëm në router
+app.use((req, res, next) => {
+    req.db = db;
+    next();
 });
 
-// Ruta për të marrë të gjitha udhëtimet
-app.get('/udhetimet', (req, res) => {
-  db.query('SELECT * FROM udhetimet', (err, results) => {
-    if (err) throw err;
-    res.json(results);
-  });
-});
+// Import routes
+app.use('/api/udhetimet', destinacioneRouter);
 
-// Starto serverin
+// Start server
 app.listen(port, () => {
-  console.log(`Serveri u startua në http://localhost:${port}`);
+    console.log(`🚀 Serveri u startua në http://localhost:${port}`);
 });
-
