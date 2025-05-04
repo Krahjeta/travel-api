@@ -1,51 +1,62 @@
 const express = require('express');
 const router = express.Router();
 
-//Mock data
-let destinacione = [
-    {id: 1, emri: 'Paris', pershkrimi: 'Qyteti i dashurise', qmimi: 500.00},
-    {id: 2, emri: 'Roma', pershkrimi: 'Qyteti i perjetshem', qmimi:450.00}
-];
-
-//GET /destinacione
-router.get('/' , (req, res) => {
-    res.json(destinacione);
+// GET të gjitha udhetimet
+router.get('/', (req, res) => {
+    const sql = `
+        SELECT u.id, u.data_nisjes, u.qmimi, d.emri AS destinacion_emri
+        FROM udhetimet u
+        JOIN destinacione d ON u.destinacion_id = d.id
+    `;
+    req.db.query(sql, (err, results) => {
+        if (err) {
+            console.error('Gabim në marrje të të dhënave:', err);
+            return res.status(500).json({ error: 'Gabim në server' });
+        }
+        res.json(results);
+    });
 });
 
-// GET /destinacione/:id
-router.get('/:id', (req, res) => {
-    const d = destinacione.find(x => x.id == req.params.id);
-    if (d) res.json(d);
-    else res.status(404).json({ message: 'Destinacioni nuk u gjet' });
-  });
-  
-// POST /destinacione
+// POST udhetim i ri
 router.post('/', (req, res) => {
-    const newD = { id: destinacione.length + 1, ...req.body };
-    destinacione.push(newD);
-    res.status(201).json(newD);
-  });
-
-// PUT /destinacione/:id
-router.put('/:id', (req, res) => {
-    const index = destinacione.findIndex(x => x.id == req.params.id);
-    if (index !== -1) {
-      destinacione[index] = { id: parseInt(req.params.id), ...req.body };
-      res.json(destinacione[index]);
-    } else {
-      res.status(404).json({ message: 'Destinacioni nuk u gjet' });
-    }
+    const { destinacion_id, data_nisjes, qmimi } = req.body;
+    const sql = `INSERT INTO udhetimet (destinacion_id, data_nisjes, qmimi) VALUES (?, ?, ?)`;
+    req.db.query(sql, [destinacion_id, data_nisjes, qmimi], (err, result) => {
+        if (err) {
+            console.error('Gabim në shtim:', err);
+            return res.status(500).json({ error: 'Gabim në server' });
+        }
+        res.status(201).json({ message: 'Udhetimi u shtua me sukses!', id: result.insertId });
+    });
 });
 
-// DELETE /destinacione/:id
+// PUT (update) udhetim
+router.put('/:id', (req, res) => {
+    const { destinacion_id, data_nisjes, qmimi } = req.body;
+    const sql = `
+        UPDATE udhetimet
+        SET destinacion_id = ?, data_nisjes = ?, qmimi = ?
+        WHERE id = ?
+    `;
+    req.db.query(sql, [destinacion_id, data_nisjes, qmimi, req.params.id], (err) => {
+        if (err) {
+            console.error('Gabim në update:', err);
+            return res.status(500).json({ error: 'Gabim në server' });
+        }
+        res.json({ message: 'Udhetimi u përditësua me sukses!' });
+    });
+});
+
+// DELETE udhetim
 router.delete('/:id', (req, res) => {
-    const index = destinacione.findIndex(x => x.id == req.params.id);
-    if (index !== -1) {
-      const deleted = destinacione.splice(index, 1);
-      res.json(deleted[0]);
-    } else {
-      res.status(404).json({ message: 'Destinacioni nuk u gjet' });
-    }
-  });
-  
+    const sql = `DELETE FROM udhetimet WHERE id = ?`;
+    req.db.query(sql, [req.params.id], (err) => {
+        if (err) {
+            console.error('Gabim në fshirje:', err);
+            return res.status(500).json({ error: 'Gabim në server' });
+        }
+        res.json({ message: 'Udhetimi u fshi me sukses!' });
+    });
+});
+
 module.exports = router;
