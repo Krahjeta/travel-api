@@ -9,6 +9,8 @@ import MyTicket from "./myTicket.jsx";
 import Offers from "./offers.jsx";
 import SignIn from "./Login.jsx";
 import SignUp from "./signup.jsx";
+import EditOffer from './editOffer.jsx';
+import AddOffers from './addOffer.jsx'; 
 
 
 function App() {
@@ -22,6 +24,8 @@ function App() {
         <Route path="/offers" element={<Offers />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/edit-offer/:id" element={<EditOffer />} />
+        <Route path="/add-offer" element={<AddOffers />} />
       </Routes>
     </BrowserRouter>
   );
