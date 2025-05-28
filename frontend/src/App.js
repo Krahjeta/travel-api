@@ -11,7 +11,7 @@ import SignIn from "./Login.jsx";
 import SignUp from "./signup.jsx";
 import EditOffer from './editOffer.jsx';
 import AddOffers from './addOffer.jsx'; 
-
+import Reserve from './reserve.jsx';
 
 function App() {
   return (
@@ -26,6 +26,7 @@ function App() {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/edit-offer/:id" element={<EditOffer />} />
         <Route path="/add-offer" element={<AddOffers />} />
+          <Route path="/reserve/:id" element={<Reserve />} />
       </Routes>
     </BrowserRouter>
   );
