@@ -2,16 +2,18 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Validation from './LoginValidation';
 
-function Login() {
+function Login({ setUser }) {
   const [values, setValues] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState('');
   const navigate = useNavigate();
 
   const handleInput = (event) => {
-    setValues(prev => ({
-      ...prev,
+    setValues({
+      ...values,
       [event.target.name]: event.target.value,
-    }));
+    });
+    setServerError(''); // Clear server error on new input
   };
 
   const handleSubmit = async (event) => {
@@ -20,8 +22,7 @@ function Login() {
     const validationErrors = Validation(values);
     setErrors(validationErrors);
 
-    const noErrors = Object.values(validationErrors).every(err => !err || err === '');
-    if (!noErrors) return;
+    if (Object.keys(validationErrors).length > 0) return;
 
     try {
       const res = await fetch('http://localhost:8081/signin', {
@@ -32,46 +33,43 @@ function Login() {
 
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to login');
+        setServerError(errorData.error || 'Failed to login');
+        return;
       }
 
       const data = await res.json();
 
-      // Save the full user object (including role) in localStorage
-      if (data.user) {
+      if (data.user && data.token) {
         localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('token', data.token);
+        setUser(data.user);
+        navigate('/offers');
+      } else {
+        setServerError('Invalid login response from server.');
       }
-
-      // Redirect to offers or home page
-      navigate('/offers');
     } catch (error) {
-      console.error('Login error:', error);
-      alert(error.message || 'Login failed. Please try again.');
+      setServerError(error.message || 'Login failed. Please try again.');
     }
   };
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        backgroundColor: '#f8f9fa',
-      }}
-    >
-      <div
-        style={{
-          width: '100%',
-          maxWidth: '400px',
-          padding: '20px',
-          backgroundColor: '#fff',
-          borderRadius: '8px',
-          boxShadow: '0 0 10px rgba(0,0,0,0.1)',
-        }}
-      >
+    <div style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      height: '100vh',
+      backgroundColor: '#f8f9fa',
+    }}>
+      <div style={{
+        width: '100%',
+        maxWidth: '400px',
+        padding: '20px',
+        backgroundColor: '#fff',
+        borderRadius: '8px',
+        boxShadow: '0 0 10px rgba(0,0,0,0.1)',
+      }}>
         <h1 style={{ textAlign: 'center' }}>Login</h1>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div style={{ marginBottom: '10px' }}>
             <label htmlFor="email">Email:</label>
             <input
@@ -81,11 +79,10 @@ function Login() {
               placeholder="Enter your email"
               value={values.email}
               onChange={handleInput}
-              className="form-control"
               style={{ padding: '8px', width: '95%', marginTop: '5px' }}
               required
             />
-            {errors.email && <span className="text-danger">{errors.email}</span>}
+            {errors.email && <div style={{ color: 'red' }}>{errors.email}</div>}
           </div>
 
           <div style={{ marginBottom: '10px' }}>
@@ -97,31 +94,39 @@ function Login() {
               placeholder="Enter your password"
               value={values.password}
               onChange={handleInput}
-              className="form-control"
               style={{ padding: '8px', width: '95%', marginTop: '5px' }}
               required
             />
-            {errors.password && <span className="text-danger">{errors.password}</span>}
+            {errors.password && <div style={{ color: 'red' }}>{errors.password}</div>}
           </div>
 
-          <button
-            type="submit"
-            className="btn btn-success"
-            style={{
-              backgroundColor: '#950606',
-              color: 'white',
-              padding: '10px 20px',
-              width: '100%',
-              marginBottom: '10px',
-            }}
-          >
+          {serverError && <div style={{ color: 'red', marginBottom: '10px' }}>{serverError}</div>}
+
+          <button type="submit" style={{
+            backgroundColor: '#950606',
+            color: 'white',
+            padding: '10px 20px',
+            width: '100%',
+            marginBottom: '10px',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+          }}>
             Login
           </button>
 
           <Link
             to="/signup"
-            className="btn btn-default border"
-            style={{ width: '100%', textAlign: 'center', display: 'block' }}
+            style={{
+              width: '100%',
+              display: 'block',
+              textAlign: 'center',
+              padding: '10px',
+              border: '1px solid #ccc',
+              borderRadius: '4px',
+              textDecoration: 'none',
+              color: '#333',
+            }}
           >
             Create Account
           </Link>
