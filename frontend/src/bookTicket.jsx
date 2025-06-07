@@ -12,16 +12,21 @@ const BookTicket = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [selectedFlight, setSelectedFlight] = useState(null);
-  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [stage, setStage] = useState('selection'); // 'selection', 'paymentOptions', 'payment'
+  const [paymentInfo, setPaymentInfo] = useState({
+    firstName: '',
+    lastName: '',
+    cardNumber: '',
+    cvv: '',
+    expirationDate: '',
+  });
 
-  // Simulated login state (replace with real auth)
-  const isLoggedIn = true;
-  const userId = 1;
+  // Replace this logic with your real auth state & token getter
+const getToken = () => localStorage.getItem('token');
+const isLoggedIn = Boolean(getToken());
 
-  // Helper to get token from localStorage
-  const getToken = () => localStorage.getItem('token');
+  
 
-  // Fix validation: require returnDate only for round trip
   const isFormValid = () =>
     from.trim() &&
     to.trim() &&
@@ -52,7 +57,6 @@ const BookTicket = () => {
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to fetch flights.');
-
       if (data.length === 0) setMessage('No flights found.');
       else setFlights(data);
     } catch (err) {
@@ -67,16 +71,49 @@ const BookTicket = () => {
       alert('Please log in to book a ticket.');
       return;
     }
-    // Check if enough seats available for travelers
     if (travelers > flight.vendet_disponueshme) {
       alert(`Only ${flight.vendet_disponueshme} seats available for this flight.`);
       return;
     }
     setSelectedFlight(flight);
-    setShowPaymentForm(true);
+    setStage('paymentOptions');  // Show payment options modal
   };
 
-  const handleReservation = async (paymentStatus) => {
+  const handlePayNow = () => {
+  if (!selectedFlight) {
+    alert('No flight selected. Please select a flight first.');
+    setStage('selection');
+    return;
+  }
+  setStage('payment');
+};
+  const handlePaymentChange = (e) => {
+    setPaymentInfo({ ...paymentInfo, [e.target.name]: e.target.value });
+  };
+
+  const handlePaymentSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!selectedFlight) {
+    alert('No flight selected. Please select a flight first.');
+    setStage('selection');
+    return;
+  }
+
+    const { firstName, lastName, cardNumber, cvv, expirationDate } = paymentInfo;
+    if (!firstName || !lastName || !cardNumber || !cvv || !expirationDate) {
+      alert('Please fill in all payment details.');
+      return;
+    }
+
+    await handleReserveFlight(true);  // paid = true
+  };
+
+  const handleReserveFlight = async (paid) => {
+    if (!selectedFlight) {
+    alert('No flight selected.');
+    return;
+  }
     const token = getToken();
     if (!token) {
       alert('User token missing, please login again.');
@@ -92,18 +129,24 @@ const BookTicket = () => {
         },
         body: JSON.stringify({
           flightId: selectedFlight.id,
-          userId,
-          travelers,
-          status: paymentStatus,
+          numSeats: travelers,
+          paid: paid ? 1 : 0,
         }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Reservation failed');
 
-      alert(`Reservation successful. Status: ${paymentStatus}`);
-      setShowPaymentForm(false);
+      alert(`Reservation successful. Status: ${paid ? 'paid' : 'not paid'}`);
       setSelectedFlight(null);
+      setStage('selection');
+      setPaymentInfo({
+        firstName: '',
+        lastName: '',
+        cardNumber: '',
+        cvv: '',
+        expirationDate: '',
+      });
     } catch (err) {
       alert('Error: ' + err.message);
     }
@@ -112,6 +155,7 @@ const BookTicket = () => {
   return (
     <div style={styles.wrapper}>
       <div style={styles.card}>
+        {/* Trip Type Toggle */}
         <div style={styles.toggleContainer}>
           {['round', 'oneway'].map((type) => (
             <button
@@ -128,6 +172,7 @@ const BookTicket = () => {
           ))}
         </div>
 
+        {/* Search Form */}
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -137,22 +182,12 @@ const BookTicket = () => {
         >
           <div style={styles.inputGroup}>
             <label>From</label>
-            <input
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-              style={styles.input}
-              required
-            />
+            <input value={from} onChange={(e) => setFrom(e.target.value)} style={styles.input} />
           </div>
 
           <div style={styles.inputGroup}>
             <label>To</label>
-            <input
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-              style={styles.input}
-              required
-            />
+            <input value={to} onChange={(e) => setTo(e.target.value)} style={styles.input} />
           </div>
 
           <div style={styles.inputGroup}>
@@ -162,7 +197,6 @@ const BookTicket = () => {
               value={departureDate}
               onChange={(e) => setDepartureDate(e.target.value)}
               style={styles.input}
-              required
             />
           </div>
 
@@ -172,10 +206,9 @@ const BookTicket = () => {
               <input
                 type="date"
                 value={returnDate}
+                min={departureDate}
                 onChange={(e) => setReturnDate(e.target.value)}
                 style={styles.input}
-                required
-                min={departureDate} // Prevent return before departure
               />
             </div>
           )}
@@ -186,21 +219,14 @@ const BookTicket = () => {
               type="number"
               min={1}
               value={travelers}
-              onChange={(e) =>
-                setTravelers(Math.max(1, Number(e.target.value)))
-              }
+              onChange={(e) => setTravelers(Math.max(1, Number(e.target.value)))}
               style={styles.input}
-              required
             />
           </div>
 
           <div style={styles.inputGroup}>
             <label>Cabin Class</label>
-            <select
-              value={cabinClass}
-              onChange={(e) => setCabinClass(e.target.value)}
-              style={styles.input}
-            >
+            <select value={cabinClass} onChange={(e) => setCabinClass(e.target.value)} style={styles.input}>
               <option>Economy</option>
               <option>Business</option>
               <option>First Class</option>
@@ -208,11 +234,7 @@ const BookTicket = () => {
           </div>
 
           <div style={{ gridColumn: '1 / -1', textAlign: 'center' }}>
-            <button
-              type="submit"
-              disabled={loading}
-              style={styles.searchButton}
-            >
+            <button type="submit" disabled={loading || !isFormValid()} style={styles.searchButton}>
               {loading ? 'Searching...' : 'Search'}
             </button>
           </div>
@@ -220,108 +242,141 @@ const BookTicket = () => {
 
         {message && <div style={styles.message}>{message}</div>}
 
+        {/* Flight Results */}
         {flights.length > 0 && (
           <div style={styles.results}>
             <h3>Matching Flights</h3>
-            {flights.map((flight) => {
-              const canBook =
-                isLoggedIn && travelers <= flight.vendet_disponueshme;
-              return (
-                <div key={flight.id} style={styles.flightCard}>
-                  <p>
-                    <strong>Airline:</strong> {flight.airline}
-                  </p>
-                  <p>
-                    <strong>From:</strong> {flight.departureCity} (
-                    {flight.departureAirport})
-                  </p>
-                  <p>
-                    <strong>To:</strong> {flight.arrivalCity} (
-                    {flight.arrivalAirport})
-                  </p>
-                  <p>
-                    <strong>Departure Date:</strong> {flight.data_fluturimit}
-                  </p>
-                  <p>
-                    <strong>Time:</strong> {flight.ora_fluturimit}
-                  </p>
-                  <p>
-                    <strong>Available Seats:</strong> {flight.vendet_disponueshme}
-                  </p>
-                  <p>
-                    <strong>Price:</strong> €{flight.qmimi}
-                  </p>
-                  <p>
-                    <strong>Total:</strong> €
-                    {(flight.qmimi * travelers).toFixed(2)}
-                  </p>
-                  {canBook ? (
-                    <button
-                      onClick={() => handleBookClick(flight)}
-                      style={{ ...styles.searchButton, marginTop: '1rem' }}
-                    >
-                      Book Ticket
-                    </button>
-                  ) : (
-                    <button
-                      disabled
-                      title={
-                        !isLoggedIn
-                          ? 'Login required'
-                          : 'Not enough available seats'
-                      }
-                      style={{
-                        ...styles.searchButton,
-                        marginTop: '1rem',
-                        backgroundColor: '#ccc',
-                        cursor: 'not-allowed',
-                      }}
-                    >
-                      Book Ticket
-                    </button>
-                  )}
-                </div>
-              );
-            })}
+            {flights.map((flight) => (
+              <div key={flight.id} style={styles.flightCard}>
+                <p><strong>Airline:</strong> {flight.airline}</p>
+                <p><strong>From:</strong> {flight.departureCity} ({flight.departureAirport})</p>
+                <p><strong>To:</strong> {flight.arrivalCity} ({flight.arrivalAirport})</p>
+                <p><strong>Date:</strong> {flight.data_fluturimit}</p>
+                <p><strong>Time:</strong> {flight.ora_fluturimit}</p>
+                <p><strong>Available Seats:</strong> {flight.vendet_disponueshme}</p>
+                <p><strong>Price:</strong> €{flight.qmimi}</p>
+                <p><strong>Total:</strong> €{(flight.qmimi * travelers).toFixed(2)}</p>
+                <button
+                  onClick={() => handleBookClick(flight)}
+                  disabled={!isLoggedIn || travelers > flight.vendet_disponueshme}
+                  style={{
+                    ...styles.searchButton,
+                    marginTop: '1rem',
+                    backgroundColor: !isLoggedIn || travelers > flight.vendet_disponueshme ? '#ccc' : '#0072c6',
+                    cursor: !isLoggedIn || travelers > flight.vendet_disponueshme ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  Book Ticket
+                </button>
+              </div>
+            ))}
           </div>
         )}
 
-        {showPaymentForm && selectedFlight && (
+        {/* Payment Options */}
+        {selectedFlight && stage === 'paymentOptions' && (
           <div style={styles.paymentModal}>
             <h3>Choose Payment Option</h3>
             <p>
-              Total for {travelers} traveler(s): €
-              {(selectedFlight.qmimi * travelers).toFixed(2)}
+              You selected flight {selectedFlight.id} from {selectedFlight.departureCity} to {selectedFlight.arrivalCity}.
             </p>
-            <button
-              onClick={() => handleReservation('paid')}
-              style={styles.searchButton}
-            >
+            <p>Seats to book: {travelers}</p>
+            <p>Total price: €{(selectedFlight.qmimi * travelers).toFixed(2)}</p>
+
+            <button onClick={handlePayNow} style={styles.paymentButton}>
               Pay Now
             </button>
             <button
-              onClick={() => handleReservation('not paid')}
-              style={{ ...styles.searchButton, backgroundColor: '#6c757d' }}
+              onClick={() => handleReserveFlight(false)}
+              style={{ ...styles.paymentButton, backgroundColor: '#ccc', color: '#333' }}
             >
               Pay Later
             </button>
             <button
               onClick={() => {
-                setShowPaymentForm(false);
                 setSelectedFlight(null);
+                setStage('selection');
               }}
-              style={{
-                marginTop: '1rem',
-                backgroundColor: '#dc3545',
-                color: '#fff',
-                border: 'none',
-                padding: '0.5rem 1rem',
-                borderRadius: 6,
-                cursor: 'pointer',
-              }}
+              style={{ ...styles.paymentButton, backgroundColor: 'red' }}
             >
               Cancel
             </button>
+          </div>
+        )}
+
+        {/* Payment Form */}
+        {selectedFlight && stage === 'payment' && (
+          <div style={styles.paymentModal}>
+            <h3>Payment Details</h3>
+            <form onSubmit={handlePaymentSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <input
+                name="firstName"
+                placeholder="First Name"
+                value={paymentInfo.firstName}
+                onChange={handlePaymentChange}
+                style={styles.input}
+                required
+              />
+              <input
+                name="lastName"
+                placeholder="Last Name"
+                value={paymentInfo.lastName}
+                onChange={handlePaymentChange}
+                style={styles.input}
+                required
+              />
+              <input
+                name="cardNumber"
+                placeholder="Card Number"
+                value={paymentInfo.cardNumber}
+                onChange={handlePaymentChange}
+                style={styles.input}
+                maxLength={16}
+                required
+              />
+              <input
+                name="cvv"
+                placeholder="CVV"
+                value={paymentInfo.cvv}
+                onChange={handlePaymentChange}
+                style={styles.input}
+                maxLength={3}
+                required
+              />
+              <input
+                name="expirationDate"
+                type="month"
+                placeholder="Expiration Date"
+                value={paymentInfo.expirationDate}
+                onChange={handlePaymentChange}
+                style={styles.input}
+                required
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem' }}>
+                <button type="submit" style={styles.paymentButton}>
+                  Pay Now
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStage('paymentOptions');
+                  }}
+                  style={{ ...styles.paymentButton, backgroundColor: '#ccc', color: '#333' }}
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedFlight(null);
+                    setStage('selection');
+                  }}
+                  style={{ ...styles.paymentButton, backgroundColor: 'red' }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         )}
       </div>
@@ -330,63 +385,96 @@ const BookTicket = () => {
 };
 
 const styles = {
-  wrapper: { minHeight: '100vh', background: '#f4f6f8', padding: '2rem' },
-  card: {
-    background: '#fff',
+  wrapper: {
+    backgroundColor: '#ebf5fb',
+    minHeight: '100vh',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'start',
     padding: '2rem',
-    borderRadius: 10,
-    maxWidth: 1000,
-    margin: 'auto',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
   },
-  toggleContainer: { display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    boxShadow: '0 0 10px #ddd',
+    maxWidth: 900,
+    width: '100%',
+    padding: '1.5rem',
+  },
+  toggleContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    marginBottom: '1rem',
+    gap: '1rem',
+  },
   toggleButton: {
-    padding: '0.6rem 1.5rem',
-    fontSize: '16px',
-    fontWeight: 'bold',
-    border: '1px solid #0072c6',
     borderRadius: 5,
-    marginRight: 10,
+    border: '1px solid #0072c6',
+    padding: '0.5rem 1.25rem',
+    fontWeight: '600',
     cursor: 'pointer',
+    outline: 'none',
   },
   grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
     gap: '1rem',
   },
-  inputGroup: { display: 'flex', flexDirection: 'column' },
+  inputGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+  },
   input: {
-    padding: '0.5rem',
-    fontSize: '14px',
-    borderRadius: '4px',
+    padding: '0.4rem 0.5rem',
+    fontSize: '1rem',
+    borderRadius: 5,
     border: '1px solid #ccc',
+    marginTop: '0.25rem',
   },
   searchButton: {
-    marginTop: '1rem',
-    padding: '0.8rem 2rem',
-    fontSize: '16px',
+    padding: '0.5rem 1rem',
     backgroundColor: '#0072c6',
-    color: '#fff',
     border: 'none',
-    borderRadius: 6,
+    borderRadius: 5,
+    color: '#fff',
+    fontWeight: '600',
     cursor: 'pointer',
   },
-  message: { marginTop: '1rem', fontWeight: 'bold', color: '#d9534f' },
-  results: { marginTop: '2rem' },
+  message: {
+    marginTop: '1rem',
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  results: {
+    marginTop: '2rem',
+  },
   flightCard: {
-    background: '#f9f9f9',
     padding: '1rem',
-    borderRadius: 8,
-    boxShadow: '0 0 6px rgba(0,0,0,0.05)',
-    marginBottom: '1rem',
+    borderBottom: '1px solid #ddd',
   },
   paymentModal: {
+    position: 'fixed',
+    top: '10%',
+    left: '50%',
+    transform: 'translateX(-50%)',
     backgroundColor: '#fff',
-    padding: '1.5rem',
-    borderRadius: '8px',
-    marginTop: '2rem',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-    textAlign: 'center',
+    padding: '2rem',
+    boxShadow: '0 0 15px rgba(0,0,0,0.3)',
+    borderRadius: 10,
+    zIndex: 1000,
+    maxWidth: 400,
+    width: '90%',
+  },
+  paymentButton: {
+    backgroundColor: '#0072c6',
+    color: '#fff',
+    padding: '0.5rem 1rem',
+    borderRadius: 5,
+    border: 'none',
+    cursor: 'pointer',
+    fontWeight: '600',
+    marginTop: '0.5rem',
+    width: '100%',
   },
 };
 

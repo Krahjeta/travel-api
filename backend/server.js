@@ -357,6 +357,38 @@ async function handleCancelReservation(req, res, user) {
   }
 }
 
+async function handleReserveFlight(req, res, user) {
+  try {
+    const { flightId, numSeats, paid } = await parseJSONBody(req);
+
+    if (!flightId || !numSeats || isNaN(numSeats) || numSeats <= 0) {
+      return sendError(res, 400, 'Invalid reservation data');
+    }
+
+    // Check flight availability
+    const flights = await queryAsync('SELECT vendet_disponueshme FROM flights WHERE id = ?', [flightId]);
+    if (flights.length === 0) return sendError(res, 404, 'Flight not found');
+
+    const available = flights[0].vendet_disponueshme;
+    if (available < numSeats) return sendError(res, 400, `Only ${available} seats available`);
+
+    // Insert reservation, paid = 1 if paid, else 0
+    const paidValue = paid ? 1 : 0;
+    await queryAsync(
+      'INSERT INTO reservations (userId, flightId, numSeats, paid) VALUES (?, ?, ?, NOW())',
+      [user.id, flightId, numSeats, paidValue ? 'paid' : 'not paid']
+    );
+
+    // Update flights available seats
+    await queryAsync('UPDATE flights SET vendet_disponueshme = vendet_disponueshme - ? WHERE id = ?', [numSeats, flightId]);
+
+    sendJSON(res, 201, { message: 'Reservation successful' });
+  } catch (error) {
+    sendError(res, 400, error.message);
+  }
+}
+
+
 // ====== SERVER ======
 const server = http.createServer(async (req, res) => {
   setCorsHeaders(res);
@@ -372,7 +404,11 @@ const server = http.createServer(async (req, res) => {
   try {
     if (req.method === 'POST' && parsedUrl.pathname === '/signup') return handleSignup(req, res);
     if (req.method === 'POST' && parsedUrl.pathname === '/signin') return handleSignin(req, res);
-     if (req.method === 'POST' && parsedUrl.pathname === '/search-flights') return handleSearchFlights(req, res);
+     if (req.method === 'POST' && parsedUrl.pathname === '/search-flights') {  const user = await verifyToken(req, res);
+  if (!user) return;  return handleSearchFlights(req, res);}
+     if (req.method === 'POST' && parsedUrl.pathname === '/reserve-ticket') {
+  const user = await verifyToken(req, res);
+  if (!user) return; return handleReserveFlight(req, res, user);}
     if (req.method === 'GET' && parsedUrl.pathname === '/offers') return handleGetOffers(req, res);
     if (req.method === 'GET' && pathParts[0] === 'offers' && pathParts.length === 2) {
       return handleGetSingleOffer(req, res, pathParts[1]);
