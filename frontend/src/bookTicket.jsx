@@ -45,13 +45,20 @@ const isLoggedIn = Boolean(getToken());
     setMessage('');
 
     try {
-      const res = await fetch('http://localhost:8081/search-flights', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          departureCity: from.trim(),
-          arrivalCity: to.trim(),
-          flightDate: departureDate,
+       const token = getToken(); // Get the token
+    const headers = { 'Content-Type': 'application/json' };
+    
+    // Add Authorization header if token exists
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const res = await fetch('http://localhost:8081/search-flights', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({
+        departureCity: from.trim(),
+        arrivalCity: to.trim(),
+        flightDate: departureDate,
         }),
       });
 

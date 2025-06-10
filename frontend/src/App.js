@@ -11,6 +11,8 @@ import SignUp from "./signup.jsx";
 import EditOffer from './editOffer.jsx';
 import AddOffers from './addOffer.jsx'; 
 import Reserve from './reserve.jsx';
+import Dashboard from './dashboard.jsx';
+import EditAdminDashboard from './editAdminDashboard.jsx';
 
 function App() {
   const [user, setUser] = useState(null); // track logged-in user
@@ -31,6 +33,8 @@ function App() {
         <Route path="/edit-offer/:id" element={<EditOffer />} />
         <Route path="/add-offer" element={<AddOffers />} />
         <Route path="/reserve/:id" element={<Reserve />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/edit-admin/:type/:id" element={<EditAdminDashboard />} /> {/* Add this route */}
       </Routes>
     </BrowserRouter>
   );

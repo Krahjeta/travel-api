@@ -32,8 +32,18 @@ const Offers = () => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) setUser(JSON.parse(storedUser));
 
-    fetch('http://localhost:8081/offers')
-      .then(res => res.json())
+    // Get token from localStorage
+    const token = localStorage.getItem('token');
+
+    fetch('http://localhost:8081/offers', {
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : '',
+      },
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch offers');
+        return res.json();
+      })
       .then(data => setOffers(data))
       .catch(err => console.error('Error fetching offers:', err));
   }, []);
@@ -57,8 +67,18 @@ const Offers = () => {
     const confirmed = window.confirm('Are you sure you want to delete this offer?');
     if (!confirmed) return;
 
-    fetch(`http://localhost:8081/delete-offer?id=${id}`, { method: 'DELETE' })
-      .then(res => res.json())
+    const token = localStorage.getItem('token');
+
+    fetch(`http://localhost:8081/delete-offer/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : '',
+      },
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to delete offer');
+        return res.json();
+      })
       .then(() => {
         alert('Offer deleted successfully');
         setOffers(prev => prev.filter(o => o.id !== id));
@@ -158,7 +178,6 @@ const Offers = () => {
     </div>
   );
 };
-
 const styles = {
   contentStrip: {
     padding: '2rem 0',

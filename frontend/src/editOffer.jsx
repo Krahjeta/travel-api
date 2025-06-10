@@ -8,16 +8,60 @@ function EditOffer() {
     city: '',
     type: '',
     departureDate: '',
+    departureTime: '',
     landingDate: '',
-    price: ''
+    landingTime: '',
+    price: '',
+    availableSeats: '',
+    image: ''
   });
 
+  const [token, setToken] = useState('');
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    fetch(`http://localhost:8081/offers/${id}`)
-      .then(res => res.json())
-      .then(data => setOffer(data))
-      .catch(err => console.error('Failed to fetch offer:', err));
-  }, [id]);
+    // Get token from localStorage
+    const storedToken = localStorage.getItem('token');
+    if (storedToken) {
+      setToken(storedToken);
+    } else {
+      navigate('/signin');
+      return;
+    }
+
+    // Fetch offer data
+    fetch(`http://localhost:8081/offers/${id}`, {
+      headers: {
+        'Authorization': `Bearer ${storedToken}`,
+      },
+    })
+      .then(res => {
+        console.log('Fetch response status:', res.status);
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        console.log('Fetched offer data:', data);
+        // Format the data to match the form fields
+        setOffer({
+          city: data.city || '',
+          type: data.type || '',
+          departureDate: data.departureDate || '',
+          departureTime: data.departureTime || '',
+          landingDate: data.landingDate || '',
+          landingTime: data.landingTime || '',
+          price: data.price || '',
+          availableSeats: data.availableSeats || '',
+          image: data.image || ''
+        });
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to fetch offer:', err);
+        alert(`Failed to load offer data: ${err.message}`);
+        setLoading(false);
+      });
+  }, [id, navigate]);
 
   const handleChange = (e) => {
     setOffer(prev => ({
@@ -26,27 +70,43 @@ function EditOffer() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    console.log('Submitting offer:', offer);
+    console.log('Using token:', token);
 
-    fetch(`http://localhost:8081/offers/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(offer),
-    })
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to update offer');
-        return res.json();
-      })
-      .then(() => {
-        alert('Offer updated successfully');
-        navigate('/offers');
-      })
-      .catch(err => {
-        console.error('Error updating offer:', err);
-        alert('Failed to update offer');
+    try {
+      const response = await fetch(`http://localhost:8081/edit-offer/${id}`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(offer),
       });
+
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('Offer updated successfully:', result);
+      alert('Offer updated successfully');
+      navigate('/offers');
+    } catch (err) {
+      console.error('Error updating offer:', err);
+      alert(`Failed to update offer: ${err.message}`);
+    }
   };
+
+  if (loading) {
+    return <div style={styles.container}>Loading...</div>;
+  }
 
   return (
     <div style={styles.container}>
@@ -63,18 +123,21 @@ function EditOffer() {
         />
 
         <label style={styles.label}>Type:</label>
-        <input
-          name="type"
-          value={offer.type}
-          onChange={handleChange}
+        <select 
+          name="type" 
+          value={offer.type} 
+          onChange={handleChange} 
           required
           style={styles.input}
-          placeholder="One-way or Round-trip"
-        />
+        >
+          <option value="">Select Type</option>
+          <option value="One-way">One-way</option>
+          <option value="Round-trip">Round-trip</option>
+        </select>
 
         <label style={styles.label}>Departure Date:</label>
         <input
-          type="datetime-local"
+          type="date"
           name="departureDate"
           value={offer.departureDate}
           onChange={handleChange}
@@ -82,11 +145,31 @@ function EditOffer() {
           style={styles.input}
         />
 
+        <label style={styles.label}>Departure Time:</label>
+        <input
+          type="time"
+          name="departureTime"
+          value={offer.departureTime}
+          onChange={handleChange}
+          required
+          style={styles.input}
+        />
+
         <label style={styles.label}>Landing Date:</label>
         <input
-          type="datetime-local"
+          type="date"
           name="landingDate"
           value={offer.landingDate}
+          onChange={handleChange}
+          required
+          style={styles.input}
+        />
+
+        <label style={styles.label}>Landing Time:</label>
+        <input
+          type="time"
+          name="landingTime"
+          value={offer.landingTime}
           onChange={handleChange}
           required
           style={styles.input}
@@ -102,6 +185,25 @@ function EditOffer() {
           style={styles.input}
           min="0"
           step="0.01"
+        />
+
+        <label style={styles.label}>Available Seats:</label>
+        <input
+          type="number"
+          name="availableSeats"
+          value={offer.availableSeats}
+          onChange={handleChange}
+          style={styles.input}
+          min="0"
+        />
+
+        <label style={styles.label}>Image:</label>
+        <input
+          name="image"
+          value={offer.image}
+          onChange={handleChange}
+          style={styles.input}
+          placeholder="Image path or URL"
         />
 
         <button type="submit" style={styles.button}>Save Changes</button>

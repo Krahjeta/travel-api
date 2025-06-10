@@ -1,7 +1,63 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 function Navbar() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userName, setUserName] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation(); // Add this to detect route changes
+
+  // Check login status on component mount and when localStorage changes
+  useEffect(() => {
+    const checkLoginStatus = () => {
+      const token = localStorage.getItem('token');
+      const user = localStorage.getItem('user');
+      
+      console.log('Token from localStorage:', token);
+      console.log('User from localStorage:', user);
+      
+      if (token && user) {
+        setIsLoggedIn(true);
+        try {
+          const userData = JSON.parse(user);
+          console.log('Parsed user data:', userData);
+          console.log('User role:', userData.role);
+          setUserName(userData.name || userData.email);
+          setIsAdmin(userData.role === 'admin');
+        } catch (e) {
+          console.error('Error parsing user data:', e);
+          setUserName('User');
+          setIsAdmin(false);
+        }
+      } else {
+        console.log('No token or user found');
+        setIsLoggedIn(false);
+        setUserName('');
+        setIsAdmin(false);
+      }
+    };
+
+    checkLoginStatus();
+
+    // Listen for storage changes (when user logs in/out in another tab)
+    window.addEventListener('storage', checkLoginStatus);
+    
+    return () => {
+      window.removeEventListener('storage', checkLoginStatus);
+    };
+  }, [location]); // Add location as dependency to re-check on route changes
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setIsLoggedIn(false);
+    setUserName('');
+    setIsAdmin(false);
+    navigate('/');
+  };
+
+  // Rest of your navbar JSX remains the same...
   return (
     <nav style={{ 
       display: 'flex', 
@@ -22,37 +78,64 @@ function Navbar() {
         <Link style={{ color: 'grey', textDecoration: 'none' }} to="/book">Book Ticket</Link>
         <Link style={{ color: 'grey', textDecoration: 'none' }} to="/myticket">My Ticket</Link>
         <Link style={{ color: 'grey', textDecoration: 'none' }} to="/offers">Offers</Link>
+        {isAdmin && (
+          <Link style={{ color: 'grey', textDecoration: 'none' }} to="/dashboard">Dashboard</Link>
+        )}
       </div>
       
-      {/* Right side: Sign-in and Sign-up Buttons */}
-      <div style={{ display: 'flex', gap: '10px' }}>
-        <Link 
-          to="/signin"
-          style={{
-            backgroundColor: '#950606',
-            color: 'white',
-            padding: '8px 16px',
-            borderRadius: '4px',
-            textDecoration: 'none',
-            fontWeight: 'bold'
-          }}
-        >
-          Sign In
-        </Link>
-        <Link 
-          to="/signup"
-          style={{
-            backgroundColor: 'white',
-            color: '#950606',
-            padding: '8px 16px',
-            borderRadius: '4px',
-            textDecoration: 'none',
-            fontWeight: 'bold',
-            border: '2px solid #950606'
-          }}
-        >
-          Sign Up
-        </Link>
+      {/* Right side: Authentication Buttons */}
+      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        {isLoggedIn ? (
+          <>
+            <span style={{ color: '#950606', fontWeight: 'bold' }}>
+              Welcome, {userName}{isAdmin && ' (Admin)'}
+            </span>
+            <button 
+              onClick={handleLogout}
+              style={{
+                backgroundColor: '#950606',
+                color: 'white',
+                padding: '8px 16px',
+                borderRadius: '4px',
+                border: 'none',
+                fontWeight: 'bold',
+                cursor: 'pointer'
+              }}
+            >
+              Logout
+            </button>
+          </>
+        ) : (
+          <>
+            <Link 
+              to="/signin"
+              style={{
+                backgroundColor: '#950606',
+                color: 'white',
+                padding: '8px 16px',
+                borderRadius: '4px',
+                textDecoration: 'none',
+                fontWeight: 'bold'
+              }}
+            >
+              Sign In
+            </Link>
+            <Link 
+              to="/signup"
+              style={{
+                backgroundColor: 'white',
+                color: '#950606',
+                padding: '8px 16px',
+                borderRadius: '4px',
+                textDecoration: 'none',
+                fontWeight: 'bold',
+                border: '2px solid #950606'
+              }}
+            >
+              Sign Up
+            </Link>
+          </>
+        )}
       </div>
 
     </nav>
@@ -60,4 +143,3 @@ function Navbar() {
 }
 
 export default Navbar;
-
