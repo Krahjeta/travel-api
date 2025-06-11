@@ -9,7 +9,6 @@ function EditAdminDashboard() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Check if user is admin
     const user = localStorage.getItem('user');
     if (!user) {
       navigate('/signin');
@@ -23,7 +22,6 @@ function EditAdminDashboard() {
       return;
     }
 
-    // Set initial form data from navigation state
     if (location.state?.item) {
       setFormData(location.state.item);
     }

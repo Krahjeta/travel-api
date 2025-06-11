@@ -30,7 +30,7 @@ function Dashboard() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         };
-        // Fetch all data
+
         const [usersRes, offersRes, reservationsRes, flightsRes, airlinesRes, airportsRes, countriesRes] = await Promise.all([
           fetch('http://localhost:8081/admin/users', { headers }),
           fetch('http://localhost:8081/offers', { headers }),
@@ -70,7 +70,6 @@ function Dashboard() {
       });
       if (response.ok) {
         alert(`${type} deleted successfully`);
-        // Refresh data
         window.location.reload();
       } else {
         alert(`Failed to delete ${type}`);
@@ -79,11 +78,13 @@ function Dashboard() {
       alert(`Error deleting ${type}: ${err.message}`);
     }
   };
-  // Edit functions (placeholder - you'll need to implement edit modals/forms)
 const handleEdit = (type, item) => {
-  // Navigate to edit page with the item data
   navigate(`/edit-admin/${type}/${item.id}`, { state: { item } });
 };
+
+const handleAddFlight = () => {
+    navigate('/add-flight');
+  };
   if (loading) return <div style={styles.container}>Loading dashboard...</div>;
   if (error) return <div style={styles.container}>Error: {error}</div>;
   return (
@@ -229,8 +230,17 @@ const handleEdit = (type, item) => {
         </div>
       </section>
       {/* Flights Table */}
+       {/* Flights Table */}
       <section style={styles.section}>
-        <h2 style={styles.sectionTitle}>Flights ({flights.length})</h2>
+        <div style={styles.sectionHeader}>
+          <h2 style={styles.sectionTitle}>Flights ({flights.length})</h2>
+          <button 
+            onClick={handleAddFlight}
+            style={styles.addBtn}
+          >
+            + Add Flight
+          </button>
+        </div>
         <div style={styles.tableContainer}>
           <table style={styles.table}>
             <thead>
@@ -462,6 +472,18 @@ const styles = {
     borderRadius: '4px',
     cursor: 'pointer',
     fontSize: '12px',
+  },
+   addBtn: {
+    backgroundColor: '#950606',
+    marginBottom:'4px',
+    color: 'white',
+    border: 'none',
+    padding: '10px 20px',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    transition: 'background-color 0.3s ease',
   },
 };
 export default Dashboard;

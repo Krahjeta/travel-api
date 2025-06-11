@@ -54,16 +54,15 @@ function parseJSONBody(req) {
 function formatDatesForFrontend(obj) {
   if (!obj) return obj;
   
-  // Handle arrays
+  // Handle arrays e dates 
   if (Array.isArray(obj)) {
     return obj.map(item => formatDatesForFrontend(item));
   }
   
-  // Handle objects
   if (typeof obj === 'object') {
     const formatted = { ...obj };
     
-    // Format date fields
+    // pershtat date fields
     if (formatted.departureDate) {
       formatted.departureDate = new Date(formatted.departureDate).toISOString().split('T')[0];
     }
@@ -77,7 +76,7 @@ function formatDatesForFrontend(obj) {
       formatted.reservationDate = new Date(formatted.reservationDate).toISOString().split('T')[0];
     }
     
-    // Format time fields (remove seconds)
+    // pershtat oren 
     if (formatted.departureTime && formatted.departureTime.includes(':')) {
       formatted.departureTime = formatted.departureTime.substring(0, 5);
     }
@@ -372,7 +371,7 @@ async function handleReserveTicket(req, res, user) {
     sendError(res, 400, error.message);
   }
 }
-// ====== ADMIN ENDPOINTS ======
+// ====== ADMIN ======
 async function handleGetAllUsers(req, res, user) {
   try {
     if (!verifyAdmin(user, res)) {
@@ -500,7 +499,7 @@ async function handleGetAllCountries(req, res, user) {
     sendError(res, 500, err.message);
   }
 }
-// ====== DELETE ENDPOINTS ======
+// ====== DELETE  ======
 async function handleDeleteOffer(req, res, user, offerId) {
   try {
     if (!verifyAdmin(user, res)) {
@@ -527,7 +526,7 @@ async function handleDeleteUser(req, res, user, userId) {
     if (!verifyAdmin(user, res)) {
       return;
     }
-    // Don't allow deleting yourself
+    // admini mos me fshi veten
     if (user.id == userId) {
       return sendError(res, 400, 'Cannot delete your own account');
     }
@@ -573,7 +572,6 @@ async function handleDeleteAirline(req, res, user, airlineId) {
     if (!verifyAdmin(user, res)) {
       return;
     }
-    // Check if airline is used in flights
     const flightsUsing = await queryAsync('SELECT id FROM flights WHERE airline_id = ?', [airlineId]);
     if (flightsUsing.length > 0) {
       return sendError(res, 400, `Cannot delete airline - it is used in ${flightsUsing.length} flight(s). Delete the flights first.`);
@@ -618,7 +616,6 @@ async function handleDeleteCountry(req, res, user, countryId) {
     if (!verifyAdmin(user, res)) {
       return;
     }
-    // Check if country is used in airports
     const airportsUsing = await queryAsync('SELECT id FROM airports WHERE shteti_id = ?', [countryId]);
     if (airportsUsing.length > 0) {
       return sendError(res, 400, `Cannot delete country - it is used in ${airportsUsing.length} airport(s). Delete the airports first.`);
@@ -676,7 +673,7 @@ async function handleDeleteReservation(req, res, user, reservationId) {
   }
 }
 
-// ====== ADDITIONAL EDIT HANDLERS ======
+// ====== EDIT for dashboard======
 async function handleEditUser(req, res, user, userId) {
   try {
     if (!verifyAdmin(user, res)) {
@@ -791,6 +788,60 @@ async function handleEditFlight(req, res, user, flightId) {
     sendError(res, 400, error.message);
   }
 }
+async function handleAddFlight(req, res, user) {
+  try {
+    console.log('handleAddFlight called'); 
+    
+    if (!verifyAdmin(user, res)) {
+      return;
+    }
+    
+    const body = await parseJSONBody(req);
+    console.log('Received flight data:', body);     
+    const { airline, departureCity, departureAirport, arrivalCity, arrivalAirport, flightDate, flightTime, price, availableSeats } = body;
+    
+    if (!airline || !departureCity || !departureAirport || !arrivalCity || !arrivalAirport || !flightDate || !flightTime || !price || !availableSeats) {
+      return sendError(res, 400, 'Missing flight fields');
+    }
+    // Find airline ID
+    const airlineResult = await queryAsync('SELECT id FROM airlines WHERE emri = ?', [airline]);
+    if (airlineResult.length === 0) {
+      return sendError(res, 400, 'Airline not found');
+    }
+    const airlineId = airlineResult[0].id;
+    // Find departure airport ID
+    const depAirportResult = await queryAsync('SELECT id FROM airports WHERE emri = ?', [departureAirport]);
+    if (depAirportResult.length === 0) {
+      return sendError(res, 400, 'Departure airport not found');
+    }
+    const depAirportId = depAirportResult[0].id;
+    // Find arrival airport ID
+    const arrAirportResult = await queryAsync('SELECT id FROM airports WHERE emri = ?', [arrivalAirport]);
+    if (arrAirportResult.length === 0) {
+      return sendError(res, 400, 'Arrival airport not found');
+    }
+    const arrAirportId = arrAirportResult[0].id;
+    const sql = `INSERT INTO flights (airline_id, aeroporti_nisjes_id, aeroporti_mberritjes_id, data_fluturimit, ora_fluturimit, qmimi, vendet_disponueshme) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    const result = await queryAsync(sql, [airlineId, depAirportId, arrAirportId, flightDate, flightTime, price, availableSeats]);
+    
+    sendJSON(res, 201, { 
+      message: 'Flight added successfully', 
+      id: result.insertId, 
+      airline, 
+      departureCity, 
+      departureAirport, 
+      arrivalCity, 
+      arrivalAirport, 
+      flightDate, 
+      flightTime, 
+      price, 
+      availableSeats 
+    });
+  } catch (error) {
+    console.error('Add flight error:', error);
+    sendError(res, 500, error.message);
+  }
+}
 // ====== SERVER SETUP ======
 const server = http.createServer(async (req, res) => {
   setCorsHeaders(res);
@@ -806,118 +857,149 @@ const server = http.createServer(async (req, res) => {
   const pathParts = path.split('/').filter(Boolean);
   console.log(`${method} ${path}`);
   try {
-    // Authentication routes
+  
     if (path === '/signup' && method === 'POST') {
       await handleSignup(req, res);
     } else if (path === '/signin' && method === 'POST') {
       await handleSignin(req, res);
+      return;
     } 
     
-    // Flight search
+    
     else if (path === '/search-flights' && method === 'POST') {
       await handleSearchFlights(req, res);
+      return;
     }
     
-    // Offers routes
+    
     else if (path === '/offers' && method === 'GET') {
       await handleGetOffers(req, res);
+      return;
     } else if (path.match(/^\/offers\/\d+$/) && method === 'GET') {
       const offerId = path.split('/')[2];
       await handleGetSingleOffer(req, res, offerId);
+      return;
     } else if (path === '/add-offer' && method === 'POST') {
       const user = await verifyToken(req, res);
       if (user) await handleAddOffer(req, res, user);
+      return;
     } else if (req.method === 'PUT' && pathParts[0] === 'edit-offer' && pathParts.length === 2) {
       const user = await verifyToken(req, res);
       if (user) await handleEditOffer(req, res, user, pathParts[1]);
+      return;
     } else if (req.method === 'DELETE' && pathParts[0] === 'delete-offer' && pathParts.length === 2) {
       const user = await verifyToken(req, res);
       if (user) await handleDeleteOffer(req, res, user, pathParts[1]);
+      return;
     }
     
     // Reservation routes
     else if (path === '/reserve' && method === 'POST') {
       const user = await verifyToken(req, res);
       if (user) await handleReserve(req, res, user);
+      return;
     } else if (path === '/reserve-ticket' && method === 'POST') {
       const user = await verifyToken(req, res);
       if (user) await handleReserveTicket(req, res, user);
+      return;
     } else if (path === '/reservations' && method === 'GET') {
       const user = await verifyToken(req, res);
       if (user) await handleGetReservations(req, res, user);
+      return;
     } else if (path === '/pay-reservation' && method === 'POST') {
       const user = await verifyToken(req, res);
       if (user) await handlePayReservation(req, res, user);
+      return;
     }
     
-    // Admin data routes
+    // Admin dashboard marrja e databazes
     else if (path === '/admin/users' && method === 'GET') {
       const user = await verifyToken(req, res);
       if (user) await handleGetAllUsers(req, res, user);
+      return;
     } else if (path === '/admin/reservations' && method === 'GET') {
       const user = await verifyToken(req, res);
       if (user) await handleGetAllReservations(req, res, user);
+      return;
     } else if (path === '/admin/flights' && method === 'GET') {
       const user = await verifyToken(req, res);
       if (user) await handleGetAllFlights(req, res, user);
+      return;
     } else if (path === '/admin/airlines' && method === 'GET') {
       const user = await verifyToken(req, res);
       if (user) await handleGetAllAirlines(req, res, user);
+      return;
     } else if (path === '/admin/airports' && method === 'GET') {
       const user = await verifyToken(req, res);
       if (user) await handleGetAllAirports(req, res, user);
+      return;
     } else if (path === '/admin/countries' && method === 'GET') {
       const user = await verifyToken(req, res);
       if (user) await handleGetAllCountries(req, res, user);
+      return;
     }
     
-    // Admin delete routes
+    // Admin dashboard delete pjesa 
     else if (req.method === 'DELETE' && pathParts[0] === 'admin' && pathParts[1] === 'delete-user' && pathParts.length === 3) {
       const user = await verifyToken(req, res);
       if (user) await handleDeleteUser(req, res, user, pathParts[2]);
+      return;
     } else if (req.method === 'DELETE' && pathParts[0] === 'admin' && pathParts[1] === 'delete-offer' && pathParts.length === 3) {
       const user = await verifyToken(req, res);
       if (user) await handleDeleteOffer(req, res, user, pathParts[2]);
+      return;
     } else if (req.method === 'DELETE' && pathParts[0] === 'admin' && pathParts[1] === 'delete-flight' && pathParts.length === 3) {
       const user = await verifyToken(req, res);
       if (user) await handleDeleteFlight(req, res, user, pathParts[2]);
+      return;
     } else if (req.method === 'DELETE' && pathParts[0] === 'admin' && pathParts[1] === 'delete-airline' && pathParts.length === 3) {
       const user = await verifyToken(req, res);
       if (user) await handleDeleteAirline(req, res, user, pathParts[2]);
+      return;
     } else if (req.method === 'DELETE' && pathParts[0] === 'admin' && pathParts[1] === 'delete-airport' && pathParts.length === 3) {
       const user = await verifyToken(req, res);
       if (user) await handleDeleteAirport(req, res, user, pathParts[2]);
+      return;
     } else if (req.method === 'DELETE' && pathParts[0] === 'admin' && pathParts[1] === 'delete-country' && pathParts.length === 3) {
       const user = await verifyToken(req, res);
       if (user) await handleDeleteCountry(req, res, user, pathParts[2]);
+      return;
     } else if (req.method === 'DELETE' && pathParts[0] === 'admin' && pathParts[1] === 'delete-reservation' && pathParts.length === 3) {
       const user = await verifyToken(req, res);
       if (user) await handleDeleteReservation(req, res, user, pathParts[2]);
+      return;
     }
-
+// admin dashboard edit
     else if (req.method === 'PUT' && pathParts[0] === 'admin' && pathParts[1] === 'edit-user' && pathParts.length === 3) {
   const user = await verifyToken(req, res);
   if (user) await handleEditUser(req, res, user, pathParts[2]);
+  return;
 } else if (req.method === 'PUT' && pathParts[0] === 'admin' && pathParts[1] === 'edit-airline' && pathParts.length === 3) {
   const user = await verifyToken(req, res);
   if (user) await handleEditAirline(req, res, user, pathParts[2]);
+  return;
 } else if (req.method === 'PUT' && pathParts[0] === 'admin' && pathParts[1] === 'edit-country' && pathParts.length === 3) {
   const user = await verifyToken(req, res);
   if (user) await handleEditCountry(req, res, user, pathParts[2]);
+  return;
 } else if (req.method === 'PUT' && pathParts[0] === 'admin' && pathParts[1] === 'edit-reservation' && pathParts.length === 3) {
   const user = await verifyToken(req, res);
   if (user) await handleEditReservation(req, res, user, pathParts[2]);
+  return;
 } else if (req.method === 'PUT' && pathParts[0] === 'admin' && pathParts[1] === 'edit-airport' && pathParts.length === 3) {
   const user = await verifyToken(req, res);
   if (user) await handleEditAirport(req, res, user, pathParts[2]);
+  return;
 } else if (req.method === 'PUT' && pathParts[0] === 'admin' && pathParts[1] === 'edit-flight' && pathParts.length === 3) {
   const user = await verifyToken(req, res);
   if (user) await handleEditFlight(req, res, user, pathParts[2]);
+  return;
 }
-
-
-
-    
+ if (method === 'POST' && path === '/add-flight') {
+    const user = await verifyToken(req, res);
+    if (user) await handleAddFlight(req, res, user);
+    return;
+  }
     else {
       sendError(res, 404, 'Not found');
     }

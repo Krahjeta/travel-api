@@ -6,9 +6,8 @@ function Navbar() {
   const [userName, setUserName] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation(); // Add this to detect route changes
+  const location = useLocation(); 
 
-  // Check login status on component mount and when localStorage changes
   useEffect(() => {
     const checkLoginStatus = () => {
       const token = localStorage.getItem('token');
@@ -40,13 +39,13 @@ function Navbar() {
 
     checkLoginStatus();
 
-    // Listen for storage changes (when user logs in/out in another tab)
+    
     window.addEventListener('storage', checkLoginStatus);
     
     return () => {
       window.removeEventListener('storage', checkLoginStatus);
     };
-  }, [location]); // Add location as dependency to re-check on route changes
+  }, [location]); 
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -57,7 +56,7 @@ function Navbar() {
     navigate('/');
   };
 
-  // Rest of your navbar JSX remains the same...
+  
   return (
     <nav style={{ 
       display: 'flex', 
@@ -72,7 +71,7 @@ function Navbar() {
         Travel Agency
       </div>
       
-      {/* Middle: Navigation Links */}
+      
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
         <Link style={{ color: 'grey', textDecoration: 'none' }} to="/">Home</Link>
         <Link style={{ color: 'grey', textDecoration: 'none' }} to="/book">Book Ticket</Link>
@@ -83,7 +82,7 @@ function Navbar() {
         )}
       </div>
       
-      {/* Right side: Authentication Buttons */}
+    
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
         {isLoggedIn ? (
           <>

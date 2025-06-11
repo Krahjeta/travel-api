@@ -20,7 +20,6 @@ function EditOffer() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get token from localStorage
     const storedToken = localStorage.getItem('token');
     if (storedToken) {
       setToken(storedToken);
@@ -29,7 +28,6 @@ function EditOffer() {
       return;
     }
 
-    // Fetch offer data
     fetch(`http://localhost:8081/offers/${id}`, {
       headers: {
         'Authorization': `Bearer ${storedToken}`,
@@ -42,7 +40,6 @@ function EditOffer() {
       })
       .then(data => {
         console.log('Fetched offer data:', data);
-        // Format the data to match the form fields
         setOffer({
           city: data.city || '',
           type: data.type || '',

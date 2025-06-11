@@ -10,17 +10,15 @@ const AddOffers = () => {
     landingDate: '',
     landingTime: '',
     price: '',
-    availableSeats: '', // Add this field
+    availableSeats: '',
     image: '',
   });
   const [token, setToken] = useState('');
   useEffect(() => {
-    // Get token directly from localStorage (not from user object)
     const storedToken = localStorage.getItem('token');
     if (storedToken) {
       setToken(storedToken);
     } else {
-      // Redirect to login if no token
       navigate('/signin');
     }
   }, [navigate]);
@@ -53,124 +51,233 @@ const AddOffers = () => {
     }
   };
   return (
-    <div style={styles.container}>
-      <h2>Add New Offer</h2>
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <input
-          type="text"
-          name="city"
-          placeholder="City"
-          value={offer.city}
-          onChange={handleChange}
-          required
-          style={styles.input}
-        />
+    <div style={styles.wrapper}>
+      <div style={styles.container}>
+        <h1 style={styles.title}>Add New Offer</h1>
         
-        <input
-          type="text"
-          name="image"  // Changed from imagePath to image
-          placeholder="Image Path (e.g. /photos/Paris.avif or https://example.com/image.jpg)"
-          value={offer.image}
-          onChange={handleChange}
-          style={styles.input}
-        />
-        
-        <select name="type" value={offer.type} onChange={handleChange} style={styles.input}>
-          <option value="One-way">One-way</option>
-          <option value="Round-trip">Round-trip</option>
-        </select>
-        
-        <input
-          type="date"
-          name="departureDate"
-          value={offer.departureDate}
-          onChange={handleChange}
-          required
-          style={styles.input}
-        />
-        
-        <input
-          type="time"
-          name="departureTime"
-          value={offer.departureTime}
-          onChange={handleChange}
-          required
-          style={styles.input}
-        />
-        
-        <input
-          type="date"
-          name="landingDate"
-          value={offer.landingDate}
-          onChange={handleChange}
-          required
-          style={styles.input}
-        />
-        
-        <input
-          type="time"
-          name="landingTime"
-          value={offer.landingTime}
-          onChange={handleChange}
-          required
-          style={styles.input}
-        />
-        
-        <input
-          type="number"
-          name="price"
-          placeholder="Price (€)"
-          value={offer.price}
-          onChange={handleChange}
-          required
-          style={styles.input}
-          min="0"
-          step="0.01"
-        />
-        
-        <input
-          type="number"
-          name="availableSeats"
-          placeholder="Available Seats"
-          value={offer.availableSeats}
-          onChange={handleChange}
-          style={styles.input}
-          min="0"
-        />
-        
-        <button type="submit" style={styles.button}>Submit</button>
-      </form>
+        <form onSubmit={handleSubmit} style={styles.form}>
+          <div style={styles.row}>
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Destination City</label>
+              <input
+                type="text"
+                name="city"
+                placeholder="e.g. Paris, London"
+                value={offer.city}
+                onChange={handleChange}
+                required
+                style={styles.input}
+              />
+            </div>
+            
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Trip Type</label>
+              <select name="type" value={offer.type} onChange={handleChange} style={styles.input}>
+                <option value="One-way">One-way</option>
+                <option value="Round-trip">Round-trip</option>
+              </select>
+            </div>
+          </div>
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Image Path</label>
+            <input
+              type="text"
+              name="image"
+              placeholder="/photos/Paris.avif or https://example.com/image.jpg"
+              value={offer.image}
+              onChange={handleChange}
+              style={styles.input}
+            />
+          </div>
+          <div style={styles.section}>
+            <h3 style={styles.sectionTitle}>Departure</h3>
+            <div style={styles.row}>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Date</label>
+                <input
+                  type="date"
+                  name="departureDate"
+                  value={offer.departureDate}
+                  onChange={handleChange}
+                  required
+                  style={styles.input}
+                />
+              </div>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Time</label>
+                <input
+                  type="time"
+                  name="departureTime"
+                  value={offer.departureTime}
+                  onChange={handleChange}
+                  required
+                  style={styles.input}
+                />
+              </div>
+            </div>
+          </div>
+          <div style={styles.section}>
+            <h3 style={styles.sectionTitle}>Landing</h3>
+            <div style={styles.row}>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Date</label>
+                <input
+                  type="date"
+                  name="landingDate"
+                  value={offer.landingDate}
+                  onChange={handleChange}
+                  required
+                  style={styles.input}
+                />
+              </div>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Time</label>
+                <input
+                  type="time"
+                  name="landingTime"
+                  value={offer.landingTime}
+                  onChange={handleChange}
+                  required
+                  style={styles.input}
+                />
+              </div>
+            </div>
+          </div>
+          <div style={styles.row}>
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Price (€)</label>
+              <input
+                type="number"
+                name="price"
+                placeholder="299.99"
+                value={offer.price}
+                onChange={handleChange}
+                required
+                style={styles.input}
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Available Seats</label>
+              <input
+                type="number"
+                name="availableSeats"
+                placeholder="50"
+                value={offer.availableSeats}
+                onChange={handleChange}
+                style={styles.input}
+                min="0"
+              />
+            </div>
+          </div>
+          <div style={styles.actions}>
+            <button 
+              type="button" 
+              onClick={() => navigate('/offers')}
+              style={styles.cancelButton}
+            >
+              Cancel
+            </button>
+            <button type="submit" style={styles.submitButton}>
+              Add Offer
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
 const styles = {
+  wrapper: {
+    minHeight: '100vh',
+    background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+    padding: '40px 20px',
+  },
   container: {
-    maxWidth: '600px',
-    margin: '2rem auto',
-    padding: '2rem',
-    backgroundColor: '#fff',
-    borderRadius: '10px',
-    boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+    maxWidth: '700px',
+    margin: '0 auto',
+    backgroundColor: 'white',
+    borderRadius: '15px',
+    padding: '30px',
+    boxShadow: '0 8px 25px rgba(0,0,0,0.1)',
+  },
+  title: {
+    fontSize: '2rem',
+    color: '#333',
+    marginBottom: '30px',
+    textAlign: 'center',
+    borderBottom: '2px solid #950606',
+    paddingBottom: '15px',
   },
   form: {
     display: 'flex',
     flexDirection: 'column',
+    gap: '20px',
+  },
+  row: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '15px',
+  },
+  inputGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  label: {
+    marginBottom: '6px',
+    fontWeight: '500',
+    color: '#555',
+    fontSize: '0.9rem',
   },
   input: {
-    marginBottom: '1rem',
-    padding: '0.5rem',
-    fontSize: '16px',
-    borderRadius: '5px',
-    border: '1px solid #ccc',
+    padding: '12px',
+    fontSize: '1rem',
+    borderRadius: '8px',
+    border: '2px solid #ddd',
+    transition: 'border-color 0.3s ease',
+    outline: 'none',
   },
-  button: {
-    padding: '0.75rem',
-    backgroundColor: '#007bff',
-    color: '#fff',
+  section: {
+    backgroundColor: '#f8f9fa',
+    padding: '20px',
+    borderRadius: '10px',
+    border: '1px solid #e9ecef',
+  },
+  sectionTitle: {
+    fontSize: '1.1rem',
+    color: '#950606',
+    margin: '0 0 15px 0',
+    fontWeight: '600',
+  },
+  actions: {
+    display: 'flex',
+    gap: '15px',
+    marginTop: '10px',
+  },
+  cancelButton: {
+    flex: 1,
+    padding: '12px',
+    backgroundColor: '#6c757d',
+    color: 'white',
     border: 'none',
-    borderRadius: '5px',
-    fontSize: '16px',
+    borderRadius: '8px',
+    fontSize: '1rem',
+    fontWeight: '500',
     cursor: 'pointer',
+    transition: 'background-color 0.3s ease',
+  },
+  submitButton: {
+    flex: 2,
+    padding: '12px',
+    backgroundColor: '#950606',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '1rem',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'background-color 0.3s ease',
   },
 };
 export default AddOffers;

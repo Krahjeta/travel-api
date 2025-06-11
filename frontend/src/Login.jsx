@@ -13,7 +13,7 @@ function Login({ setUser }) {
       ...values,
       [event.target.name]: event.target.value,
     });
-    setServerError(''); // Clear server error on new input
+    setServerError(''); 
   };
 
   const handleSubmit = async (event) => {

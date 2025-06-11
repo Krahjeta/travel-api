@@ -32,7 +32,7 @@ const Offers = () => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) setUser(JSON.parse(storedUser));
 
-    // Get token from localStorage
+    
     const token = localStorage.getItem('token');
 
     fetch('http://localhost:8081/offers', {
@@ -166,7 +166,7 @@ const Offers = () => {
           {user?.role === 'admin' && (
             <div style={{ textAlign: 'center', marginTop: '2rem' }}>
               <button
-                style={{ ...styles.reserveButton, backgroundColor: '#28a745' }}
+                style={{ ...styles.reserveButton, backgroundColor: '#2c3e50' }}
                 onClick={() => navigate('/add-offer')}
               >
                 Add Offer
@@ -275,7 +275,7 @@ const styles = {
   reserveButton: {
     marginTop: '1rem',
     padding: '0.75rem 1.5rem',
-    backgroundColor: '#007bff',
+    backgroundColor: 'rgba(228, 188, 13, 0.8)',
     color: '#fff',
     border: 'none',
     borderRadius: '5px',

@@ -26,7 +26,7 @@ function SignUp() {
 
     const noErrors = Object.values(validationErrors).every(err => err === '');
     if (noErrors) {
-      // Add role here: always "user" on signup
+      
       fetch('http://localhost:8081/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -46,7 +46,7 @@ function SignUp() {
       <div style={{ width: '100%', maxWidth: '400px', padding: '20px', backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 0 10px rgba(0,0,0,0.1)' }}>
         <h1 style={{ textAlign: 'center' }}>Sign Up</h1>
         <form onSubmit={handleSubmit}>
-          {/* ... your inputs unchanged ... */}
+          
           <div style={{ marginBottom: '10px' }}>
             <label htmlFor="name">Full Name:</label>
             <input
